@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IQ Clinics Booking</title>
+<meta name="description" content="Book a visit online">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap">
+<style>
+/* One centred card: clinic header, then doctor -> day -> time -> details. */
+:root {
+  --bg: #f3f6f8; --surface: #ffffff; --ink: #17212b; --muted: #5b6875; --line: #dde4ea;
+  --accent: #0f7c86; --accent-ink: #ffffff; --accent-tint: #e3f3f4; --ok: #11795b; --err: #b3341f;
+  --font: "Vazirmatn", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #10161b; --surface: #182128; --ink: #e6edf2; --muted: #9fb0bd; --line: #2a3742;
+    --accent: #4fc3cc; --accent-ink: #062226; --accent-tint: #173a3e; --ok: #5fd3a9; --err: #ff8a73; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #10161b; --surface: #182128; --ink: #e6edf2; --muted: #9fb0bd; --line: #2a3742;
+  --accent: #4fc3cc; --accent-ink: #062226; --accent-tint: #173a3e; --ok: #5fd3a9; --err: #ff8a73; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--font);
+  padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); }
+.card { max-width: 560px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px 20px; }
+.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.kicker { font-size: 13px; color: var(--accent); font-weight: 600; }
+h1 { font-size: 22px; margin: 2px 0 4px; line-height: 1.3; overflow-wrap: anywhere; }
+.meta { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+select.lang { font: 13px var(--font); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; flex-shrink: 0; }
+h2 { font-size: 15px; margin: 22px 0 10px; display: flex; gap: 8px; align-items: center; }
+h2 .n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-tint); color: var(--accent); font-size: 12.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 600 14.5px var(--font); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; cursor: pointer; min-height: 44px; }
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.day { display: grid; text-align: center; min-width: 76px; line-height: 1.25; padding: 8px 10px; }
+.day small { font-weight: 400; font-size: 12px; opacity: .8; }
+.times { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+.times .chip { padding: 9px 4px; direction: ltr; }
+label { display: block; font-size: 13.5px; color: var(--muted); margin: 12px 0 4px; }
+input[type=text], input[type=tel], input[type=number], textarea { width: 100%; font: 16px var(--font); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+textarea { min-height: 70px; resize: vertical; }
+input[type=tel] { direction: ltr; text-align: start; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* Hidden spam-trap field. Not pushed off-screen with left:-9999px: on an RTL page that widened
+   the document to 10,000px (blank page on phones). */
+.hp { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); opacity: 0; pointer-events: none; }
+.btn { width: 100%; margin-top: 18px; font: 700 16px var(--font); color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 12px; padding: 13px; cursor: pointer; }
+.btn[disabled] { opacity: .55; cursor: default; }
+.err { color: var(--err); font-size: 14px; margin-top: 10px; }
+.empty { color: var(--muted); font-size: 14.5px; }
+.notice { text-align: center; padding: 26px 6px; }
+.notice b { display: block; font-size: 19px; margin-bottom: 8px; }
+.notice p { color: var(--muted); margin: 6px 0; }
+.summary { background: var(--accent-tint); border-radius: 12px; padding: 12px 14px; margin: 14px 0; text-align: start; }
+.summary div { display: flex; justify-content: space-between; gap: 10px; }
+.summary span { color: var(--muted); }
+.tg { display: inline-block; margin-top: 10px; color: var(--accent); font-weight: 600; }
+.foot { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 16px; }
+.ltr { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+@media (max-width: 380px) { .row2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="card" id="card"><div class="notice" id="loading">…</div></div>
+<p class="foot">IQ Clinics</p>
+
+<script>
+(function () {
+  var FN = "https://tmkbtbcpnmffzxjlbuiq.supabase.co/functions/v1/clinic-booking";
+  var LANGS = { ar: "العربية", en: "English", ckb: "کوردی (سۆرانی)", kmr: "کوردی (بادینی)", tr: "Türkçe" };
+  var RTL = { ar: 1, ckb: 1, kmr: 1 };
+
+  var T = {
+    en: { kicker: "Book a visit", doctor: "Choose a doctor", day: "Choose a day", time: "Choose a time", you: "Your details",
+          name: "Full name", phone: "Phone number", gender: "Gender", male: "Male", female: "Female", year: "Year of birth (optional)",
+          note: "Note for the clinic (optional)", send: "Book", sending: "Booking…", noDays: "No free times in the coming days. Please call the clinic.",
+          noTimes: "No free times left on this day.", requested: "Request sent", requestedHelp: "The clinic will confirm your booking. They may call you on {phone}.",
+          confirmed: "Booking confirmed", confirmedHelp: "Please arrive a few minutes early.", when: "When", with: "Doctor", at: "Clinic",
+          tg: "Get a reminder on Telegram", again: "Book another visit", closed: "Online booking isn't available", closedHelp: "Please contact the clinic directly.",
+          slot_taken: "Sorry, this time was just taken. Please choose another one.", too_many: "This number already has bookings waiting. Please call the clinic.",
+          rate_limited: "Too many attempts. Please try again later.", bad_phone: "Please enter a valid phone number.", failed: "Something went wrong. Please try again.",
+          needName: "Please enter your name and phone number.", left: "{n} free", today: "Today", tomorrow: "Tomorrow" },
+    ar: { kicker: "حجز موعد", doctor: "اختر الطبيب", day: "اختر اليوم", time: "اختر الوقت", you: "معلوماتك",
+          name: "الاسم الكامل", phone: "رقم الهاتف", gender: "الجنس", male: "ذكر", female: "أنثى", year: "سنة الميلاد (اختياري)",
+          note: "ملاحظة للعيادة (اختياري)", send: "احجز", sending: "جارٍ الحجز…", noDays: "لا توجد أوقات متاحة في الأيام القادمة. يرجى الاتصال بالعيادة.",
+          noTimes: "لم يبقَ وقت متاح في هذا اليوم.", requested: "تم إرسال طلب الحجز", requestedHelp: "ستؤكد العيادة موعدك، وقد تتصل بك على {phone}.",
+          confirmed: "تم تأكيد الموعد", confirmedHelp: "يرجى الحضور قبل الموعد ببضع دقائق.", when: "الموعد", with: "الطبيب", at: "العيادة",
+          tg: "احصل على تذكير عبر تيليجرام", again: "حجز موعد آخر", closed: "الحجز الإلكتروني غير متاح", closedHelp: "يرجى التواصل مع العيادة مباشرة.",
+          slot_taken: "عذراً، حُجز هذا الوقت للتو. يرجى اختيار وقت آخر.", too_many: "لهذا الرقم حجوزات بانتظار التأكيد. يرجى الاتصال بالعيادة.",
+          rate_limited: "محاولات كثيرة. يرجى المحاولة لاحقاً.", bad_phone: "يرجى إدخال رقم هاتف صحيح.", failed: "حدث خطأ. يرجى المحاولة مرة أخرى.",
+          needName: "يرجى إدخال الاسم ورقم الهاتف.", left: "{n} متاح", today: "اليوم", tomorrow: "غداً" },
+    ckb: { kicker: "دیاریکردنی کات", doctor: "پزیشک هەڵبژێرە", day: "ڕۆژ هەڵبژێرە", time: "کات هەڵبژێرە", you: "زانیارییەکانت",
+           name: "ناوی تەواو", phone: "ژمارەی تەلەفۆن", gender: "ڕەگەز", male: "نێر", female: "مێ", year: "ساڵی لەدایکبوون (ئارەزوومەندانە)",
+           note: "تێبینی بۆ کلینیک (ئارەزوومەندانە)", send: "کات دیاری بکە", sending: "دیاری دەکرێت…", noDays: "لە ڕۆژانی داهاتوودا کاتی بەتاڵ نییە. تکایە پەیوەندی بە کلینیکەوە بکە.",
+           noTimes: "لەم ڕۆژەدا کاتی بەتاڵ نەماوە.", requested: "داواکارییەکەت نێردرا", requestedHelp: "کلینیکەکە کاتەکەت پشتڕاست دەکاتەوە، لەوانەیە پەیوەندیت پێوە بکەن لەسەر {phone}.",
+           confirmed: "کاتەکە پشتڕاست کرایەوە", confirmedHelp: "تکایە چەند خولەکێک پێش کاتەکە ئامادە بە.", when: "کات", with: "پزیشک", at: "کلینیک",
+           tg: "بیرخستنەوە لە تەلەگرام وەربگرە", again: "کاتێکی تر دیاری بکە", closed: "دیاریکردنی کات بە ئۆنلاین بەردەست نییە", closedHelp: "تکایە ڕاستەوخۆ پەیوەندی بە کلینیکەوە بکە.",
+           slot_taken: "ببورە، ئەم کاتە ئێستا گیرا. تکایە کاتێکی تر هەڵبژێرە.", too_many: "ئەم ژمارەیە داواکاری چاوەڕوانی هەیە. تکایە پەیوەندی بە کلینیکەوە بکە.",
+           rate_limited: "هەوڵی زۆر. تکایە دواتر هەوڵ بدەرەوە.", bad_phone: "تکایە ژمارەی تەلەفۆنێکی دروست بنووسە.", failed: "هەڵەیەک ڕوویدا. تکایە دووبارە هەوڵ بدەرەوە.",
+           needName: "تکایە ناو و ژمارەی تەلەفۆن بنووسە.", left: "{n} بەتاڵ", today: "ئەمڕۆ", tomorrow: "سبەینێ" },
+    kmr: { kicker: "دیارکرنا دەمی", doctor: "دکتۆری هەلبژێرە", day: "ڕۆژێ هەلبژێرە", time: "دەمی هەلبژێرە", you: "پێزانینێن تە",
+           name: "ناڤێ تەمام", phone: "ژمارا تەلەفۆنێ", gender: "ڕەگەز", male: "نێر", female: "مێ", year: "سالا ژدایکبوونێ (ب دلێ خۆ)",
+           note: "تێبینی بۆ کلینیکێ (ب دلێ خۆ)", send: "دەمی دیار بکە", sending: "دیار دبیت…", noDays: "د ڕۆژێن بێن دا دەمێ ڤالا نینە. هیڤیە پەیوەندیێ ب کلینیکێ بکە.",
+           noTimes: "د ڤێ ڕۆژێ دا دەمێ ڤالا نەمایە.", requested: "داخوازا تە هاتە فرێکرن", requestedHelp: "کلینیک دێ دەمێ تە پشتڕاست کەت، بەلکی پەیوەندیێ ب تە بکەن ل سەر {phone}.",
+           confirmed: "دەم هاتە پشتڕاستکرن", confirmedHelp: "هیڤیە چەند خولەکان بەری دەمی ئامادە بە.", when: "دەم", with: "دکتۆر", at: "کلینیک",
+           tg: "بیرئینانێ ل تەلەگرامێ وەربگرە", again: "دەمەکێ دی دیار بکە", closed: "دیارکرنا دەمی ب ئۆنلاین بەردەست نینە", closedHelp: "هیڤیە ڕاستەوخۆ پەیوەندیێ ب کلینیکێ بکە.",
+           slot_taken: "ببورە، ئەڤ دەمە نوکە هاتە گرتن. هیڤیە دەمەکێ دی هەلبژێرە.", too_many: "ئەڤ ژمارە داخوازێن چاڤەڕێ هەنە. هیڤیە پەیوەندیێ ب کلینیکێ بکە.",
+           rate_limited: "هەولێن زۆر. هیڤیە پاشی هەول بدە.", bad_phone: "هیڤیە ژمارەکا تەلەفۆنێ یا دروست بنڤیسە.", failed: "خەلەتیەک چێبوو. هیڤیە دووبارە هەول بدە.",
+           needName: "هیڤیە ناڤ و ژمارا تەلەفۆنێ بنڤیسە.", left: "{n} ڤالا", today: "ئەڤرۆ", tomorrow: "سوبەهی" },
+    tr: { kicker: "Randevu al", doctor: "Doktor seçin", day: "Gün seçin", time: "Saat seçin", you: "Bilgileriniz",
+          name: "Ad soyad", phone: "Telefon numarası", gender: "Cinsiyet", male: "Erkek", female: "Kadın", year: "Doğum yılı (isteğe bağlı)",
+          note: "Klinik için not (isteğe bağlı)", send: "Randevu al", sending: "Gönderiliyor…", noDays: "Önümüzdeki günlerde boş saat yok. Lütfen kliniği arayın.",
+          noTimes: "Bu gün için boş saat kalmadı.", requested: "Talebiniz gönderildi", requestedHelp: "Klinik randevunuzu onaylayacak; sizi {phone} numarasından arayabilir.",
+          confirmed: "Randevu onaylandı", confirmedHelp: "Lütfen birkaç dakika erken gelin.", when: "Zaman", with: "Doktor", at: "Klinik",
+          tg: "Telegram'dan hatırlatma alın", again: "Başka randevu al", closed: "Online randevu kullanılamıyor", closedHelp: "Lütfen klinikle doğrudan iletişime geçin.",
+          slot_taken: "Üzgünüz, bu saat az önce alındı. Lütfen başka bir saat seçin.", too_many: "Bu numaranın bekleyen randevuları var. Lütfen kliniği arayın.",
+          rate_limited: "Çok fazla deneme. Lütfen daha sonra tekrar deneyin.", bad_phone: "Lütfen geçerli bir telefon numarası girin.", failed: "Bir sorun oluştu. Lütfen tekrar deneyin.",
+          needName: "Lütfen adınızı ve telefon numaranızı girin.", left: "{n} boş", today: "Bugün", tomorrow: "Yarın" }
+  };
+  var DAYS = {
+    en: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    ar: ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"],
+    ckb: ["دووشەممە", "سێشەممە", "چوارشەممە", "پێنجشەممە", "هەینی", "شەممە", "یەکشەممە"],
+    kmr: ["دووشەمب", "سێشەمب", "چارشەمب", "پێنجشەمب", "ئەینی", "شەمبی", "یەکشەمب"],
+    tr: ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
+  };
+
+  var code = (location.hash || "").replace(/^#/, "").trim().toLowerCase();
+  var card = document.getElementById("card");
+  var lang = "ar", t = T.ar;
+  var info = null;
+  var sel = { doctor: null, day: null, time: null };
+  var days = [], times = [];
+
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === "text") e.textContent = attrs[k];
+      else if (k === "on") for (var ev in attrs.on) e.addEventListener(ev, attrs.on[ev]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function fmt(s, v) { return s.replace(/\{(\w+)\}/g, function (_, k) { return v[k]; }); }
+
+  function api(body) {
+    body.code = code;
+    return fetch(FN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { j.__status = r.status; return j; }); });
+  }
+
+  function setLang(l) {
+    lang = T[l] ? l : "ar"; t = T[lang];
+    document.documentElement.lang = lang;
+    document.documentElement.dir = RTL[lang] ? "rtl" : "ltr";
+    try { localStorage.setItem("iqc_book_lang", lang); } catch (e) {}
+  }
+
+  function dayLabel(iso) {
+    var p = iso.split("-").map(Number);
+    var d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+    var now = new Date();
+    var today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    var diff = Math.round((d.getTime() - today) / 86400000);
+    var name = diff === 0 ? t.today : diff === 1 ? t.tomorrow : DAYS[lang][(d.getUTCDay() + 6) % 7];
+    return { name: name, date: p[2] + "/" + p[1] };
+  }
+
+  function closed() {
+    card.innerHTML = "";
+    card.appendChild(el("div", { "class": "notice" }, [el("b", { text: t.closed }), el("p", { text: t.closedHelp })]));
+  }
+
+  function header() {
+    var picker = el("select", { "class": "lang", "aria-label": "Language", on: { change: function (e) { setLang(e.target.value); render(); } } });
+    Object.keys(LANGS).forEach(function (k) {
+      var o = el("option", { value: k, text: LANGS[k] });
+      if (k === lang) o.selected = true;
+      picker.appendChild(o);
+    });
+    var meta = [info.address, info.phone].filter(Boolean);
+    return el("div", { "class": "top" }, [
+      el("div", null, [
+        el("div", { "class": "kicker", text: t.kicker }),
+        el("h1", { text: info.clinic }),
+        meta.length ? el("div", { "class": "meta" }, meta.map(function (m, i) {
+          return el("span", { "class": i === 1 ? "ltr" : "", text: (i ? " · " : "") + m });
+        })) : null
+      ]),
+      picker
+    ]);
+  }
+
+  function step(n, title) { return el("h2", null, [el("span", { "class": "n", text: String(n) }), el("span", { text: title })]); }
+
+  function chip(label, pressed, onClick, extra) {
+    return el("button", { type: "button", "class": "chip" + (extra ? " " + extra : ""), "aria-pressed": pressed ? "true" : "false", on: { click: onClick } }, label);
+  }
+
+  function render(errText) {
+    card.innerHTML = "";
+    card.appendChild(header());
+    var n = 1;
+    if (info.doctors.length > 1) {
+      card.appendChild(step(n++, t.doctor));
+      var dw = el("div", { "class": "chips" });
+      info.doctors.forEach(function (d) {
+        dw.appendChild(chip([document.createTextNode(d.name)], sel.doctor === d.id, function () { pickDoctor(d.id); }));
+      });
+      card.appendChild(dw);
+    }
+    if (!sel.doctor) return;
+
+    card.appendChild(step(n++, t.day));
+    if (!days.length) { card.appendChild(el("p", { "class": "empty", text: t.noDays })); return; }
+    var dayWrap = el("div", { "class": "chips" });
+    days.forEach(function (d) {
+      var lab = dayLabel(d.day);
+      dayWrap.appendChild(chip([el("span", { text: lab.name }), el("small", { "class": "ltr", text: lab.date })],
+        sel.day === d.day, function () { pickDay(d.day); }, "day"));
+    });
+    card.appendChild(dayWrap);
+    if (!sel.day) return;
+
+    card.appendChild(step(n++, t.time));
+    if (!times.length) { card.appendChild(el("p", { "class": "empty", text: t.noTimes })); return; }
+    var tw = el("div", { "class": "times" });
+    times.forEach(function (s) {
+      tw.appendChild(chip([document.createTextNode(s)], sel.time === s, function () { sel.time = s; render(); toNextStep(); }));
+    });
+    card.appendChild(tw);
+    if (!sel.time) return;
+
+    card.appendChild(step(n++, t.you));
+    var f = el("form", { novalidate: "", on: { submit: submit } });
+    f.appendChild(el("label", { "for": "nm", text: t.name }));
+    f.appendChild(el("input", { id: "nm", type: "text", autocomplete: "name", maxlength: "120", required: "" }));
+    f.appendChild(el("label", { "for": "ph", text: t.phone }));
+    f.appendChild(el("input", { id: "ph", type: "tel", autocomplete: "tel", inputmode: "tel", maxlength: "40", required: "",
+                                placeholder: info.dial_code ? "+" + String(info.dial_code).replace(/\D/g, "") + " …" : "" }));
+    var g = el("div", { "class": "chips", role: "radiogroup", "aria-label": t.gender, id: "gd" });
+    [["m", t.male], ["f", t.female]].forEach(function (o) {
+      g.appendChild(chip([document.createTextNode(o[1])], false, function (e) {
+        Array.prototype.forEach.call(g.children, function (c) { c.setAttribute("aria-pressed", "false"); });
+        e.currentTarget.setAttribute("aria-pressed", "true"); g.dataset.v = o[0];
+      }));
+    });
+    f.appendChild(el("div", { "class": "row2" }, [
+      el("div", null, [el("label", { text: t.gender }), g]),
+      el("div", null, [el("label", { "for": "yr", text: t.year }),
+                       el("input", { id: "yr", type: "number", inputmode: "numeric", min: "1900", max: "2100" })])
+    ]));
+    f.appendChild(el("label", { "for": "nt", text: t.note }));
+    f.appendChild(el("textarea", { id: "nt", maxlength: "500" }));
+    f.appendChild(el("div", { "class": "hp", "aria-hidden": "true" }, [el("input", { id: "ws", type: "text", tabindex: "-1", autocomplete: "off" })]));
+    f.appendChild(el("button", { "class": "btn", type: "submit", id: "go", text: t.send }));
+    if (errText) f.appendChild(el("div", { "class": "err", role: "alert", text: errText }));
+    card.appendChild(f);
+  }
+
+  // After a pick, bring the step it opened into view -- on a phone the new
+  // step appeared below the fold and the page looked like nothing happened.
+  function toNextStep() {
+    var hs = card.querySelectorAll("h2");
+    var h = hs[hs.length - 1];
+    if (h && h.getBoundingClientRect().top > window.innerHeight * 0.6) h.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function pickDoctor(id) {
+    sel = { doctor: id, day: null, time: null }; days = []; times = [];
+    api({ action: "days", doctor_id: id }).then(function (j) { days = j.days || []; render(); toNextStep(); }).catch(function () { render(t.failed); });
+  }
+  function pickDay(day) {
+    sel.day = day; sel.time = null; times = [];
+    api({ action: "slots", doctor_id: sel.doctor, day: day }).then(function (j) { times = j.slots || []; render(); toNextStep(); })
+      .catch(function () { render(t.failed); });
+  }
+
+  function submit(e) {
+    e.preventDefault();
+    var name = document.getElementById("nm").value.trim();
+    var phone = document.getElementById("ph").value.trim();
+    var gd = document.getElementById("gd").dataset.v;
+    var yr = parseInt(document.getElementById("yr").value, 10);
+    var keep = { name: name, phone: phone, note: document.getElementById("nt").value, yr: document.getElementById("yr").value };
+    if (name.length < 2 || phone.replace(/\D/g, "").length < 7) { showError(t.needName, keep); return; }
+    var go = document.getElementById("go");
+    go.disabled = true; go.textContent = t.sending;
+    api({ action: "book", doctor_id: sel.doctor, day: sel.day, time: sel.time, name: name, phone: phone,
+          is_male: gd ? gd === "m" : undefined, birth_year: isNaN(yr) ? undefined : yr,
+          note: keep.note, website: document.getElementById("ws").value })
+      .then(function (j) {
+        if (j.ok) return done(j, phone);
+        if (j.error === "slot_taken") {
+          sel.time = null;
+          return api({ action: "slots", doctor_id: sel.doctor, day: sel.day }).then(function (s) {
+            times = s.slots || []; render(t.slot_taken);
+          });
+        }
+        showError(t[j.error] || t.failed, keep);
+      })
+      .catch(function () { showError(t.failed, keep); });
+  }
+
+  function showError(msg, keep) {
+    render(msg);
+    document.getElementById("nm").value = keep.name;
+    document.getElementById("ph").value = keep.phone;
+    document.getElementById("nt").value = keep.note;
+    document.getElementById("yr").value = keep.yr;
+  }
+
+  function done(j, phone) {
+    var doc = (info.doctors.filter(function (d) { return d.id === sel.doctor; })[0] || {}).name || "";
+    var lab = dayLabel(j.day);
+    var ok = j.status === "confirmed";
+    card.innerHTML = "";
+    card.appendChild(header());
+    var phoneSpan = el("span", { "class": "ltr", text: phone });
+    var help = el("p");
+    if (ok) help.textContent = t.confirmedHelp;
+    else {
+      var parts = t.requestedHelp.split("{phone}");
+      help.appendChild(document.createTextNode(parts[0])); help.appendChild(phoneSpan);
+      help.appendChild(document.createTextNode(parts[1] || ""));
+    }
+    var box = el("div", { "class": "notice" }, [
+      el("b", { text: (ok ? "✅ " : "📨 ") + (ok ? t.confirmed : t.requested) }),
+      el("div", { "class": "summary" }, [
+        el("div", null, [el("span", { text: t.when }), el("strong", null, [document.createTextNode(lab.name + " "),
+          el("bdi", { "class": "ltr", text: lab.date + " · " + j.time })])]),
+        doc ? el("div", null, [el("span", { text: t.with }), el("strong", { text: doc })]) : null,
+        el("div", null, [el("span", { text: t.at }), el("strong", { text: info.clinic })])
+      ]),
+      help,
+      info.telegram ? el("a", { "class": "tg", href: "https://t.me/" + info.telegram, target: "_blank", rel: "noopener", text: t.tg }) : null,
+      el("button", { type: "button", "class": "chip", style: "margin-top:16px", on: { click: function () {
+        sel = { doctor: info.doctors.length === 1 ? info.doctors[0].id : null, day: null, time: null };
+        if (sel.doctor) pickDoctor(sel.doctor); else render();
+      } } }, [document.createTextNode(t.again)])
+    ]);
+    card.appendChild(box);
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem("iqc_book_lang"); } catch (e) {}
+  setLang(saved || "ar");
+  if (!/^[a-z0-9]{6,40}$/.test(code)) { closed(); return; }
+  api({ action: "info" }).then(function (j) {
+    if (j.__status !== 200 || !j.clinic) { closed(); return; }
+    info = j;
+    if (!saved) setLang(j.language || "ar");
+    document.title = j.clinic + " · " + t.kicker;
+    if (info.doctors.length === 1) pickDoctor(info.doctors[0].id);
+    else if (!info.doctors.length) { closed(); }
+    else render();
+  }).catch(closed);
+})();
+</script>
+</body>
+</html>
