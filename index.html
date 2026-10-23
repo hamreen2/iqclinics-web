@@ -34,6 +34,14 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- Plain text for crawlers and Meta business verification (the operator's
+       legal name must be readable without JavaScript). Shown while the app
+       loads; the Flutter view paints over it (z-index -1). -->
+  <footer id="site-info" style="position:fixed;left:0;right:0;bottom:0;z-index:-1;padding:12px 16px;font:13px/1.5 system-ui,sans-serif;color:#5b6875;text-align:center">
+    IQ Clinics &mdash; dental clinic management software, operated by Hamreen Ahmad Madhat Aldawdi,
+    Rzgari, Kalar, Sulaymaniyah, Iraq &middot; +964 774 813 3883 &middot;
+    <a href="privacy/" style="color:#0f7c86">Privacy policy</a>
+  </footer>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
